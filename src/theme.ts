@@ -2,15 +2,15 @@ import { StyleSheet } from 'react-native';
 import { Easing, FadeInDown } from 'react-native-reanimated';
 
 export const colors = {
-  ink: '#14110F',
-  inkRaised: '#1D1916',
-  inkLine: '#2E2924',
-  bone: '#EEE8DC',
-  boneDim: '#A59E91',
-  signal: '#FF5B22',
-  paperInk: '#14110F',
-  paperDim: '#6B6459',
-  paperLine: '#D9D2C3',
+  ink: '#101211',
+  inkRaised: '#191D1A',
+  inkLine: '#2A312C',
+  bone: '#F2F4EC',
+  boneDim: '#A3ADA4',
+  signal: '#C5F36A',
+  paperInk: '#101611',
+  paperDim: '#59665A',
+  paperLine: '#DCE5D8',
 };
 
 export const fonts = {

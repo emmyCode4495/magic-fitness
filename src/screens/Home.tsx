@@ -75,17 +75,32 @@ export function HomeScreen({ onStart }: { onStart: (w: Workout) => void }) {
         </View>
       </Animated.View>
 
-      <Animated.View entering={enter(1)} style={{ alignItems: 'center', marginTop: 28 }}>
+      <Animated.View entering={enter(1)} style={styles.heroPanel}>
+        <View style={styles.heroTop}>
+          <View>
+            <Text style={[type.micro, { color: colors.boneDim }]}>TODAY'S ENERGY</Text>
+            <Text style={[type.small, { color: colors.bone, marginTop: 5 }]}>You're building momentum.</Text>
+          </View>
+          <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>ON TRACK</Text></View>
+        </View>
         <Animated.View style={dialParallax}>
-          <PulseDial value={kcal} goal={650} />
+          <PulseDial value={kcal} goal={650} size={270} />
         </Animated.View>
+        <View style={styles.goalFooter}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.goalTrack}><View style={[styles.goalFill, { width: `${Math.min((kcal / 650) * 100, 100)}%` }]} /></View>
+            <Text style={[type.small, { color: colors.boneDim, marginTop: 8 }]}>168 kcal to your daily goal</Text>
+          </View>
+          <Text style={[type.h2, { color: colors.signal }]}>74%</Text>
+        </View>
       </Animated.View>
 
       <Animated.View entering={enter(2)} style={styles.stats}>
         {stats.map((s, i) => (
-          <View key={s.label} style={[styles.stat, i > 0 && styles.statDivider]}>
+          <View key={s.label} style={styles.stat}>
             <Text style={[type.micro, { color: colors.boneDim }]}>{s.label}</Text>
-            <Text style={[type.h2, { color: colors.bone, marginTop: 4 }]}>{s.value}</Text>
+            <Text style={[type.h2, { color: colors.bone, marginTop: 7 }]}>{s.value}</Text>
+            <View style={styles.statAccent}><View style={{ width: i === 0 ? '78%' : i === 1 ? '62%' : '86%', height: 4, borderRadius: 4, backgroundColor: colors.signal }} /></View>
           </View>
         ))}
       </Animated.View>
@@ -133,16 +148,24 @@ export function HomeScreen({ onStart }: { onStart: (w: Workout) => void }) {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: colors.inkLine, alignItems: 'center', justifyContent: 'center' },
-  stats: { flexDirection: 'row', marginTop: 28, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.inkLine },
-  stat: { flex: 1, paddingVertical: 16, paddingHorizontal: 16 },
-  statDivider: { borderLeftWidth: 1, borderLeftColor: colors.inkLine },
-  weekRow: { flexDirection: 'row', gap: 8, marginTop: 24 },
-  day: { height: 84, borderRadius: 22, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: colors.inkLine, backgroundColor: colors.inkRaised, alignItems: 'center', justifyContent: 'center' },
+  heroPanel: { marginTop: 24, paddingTop: 20, paddingBottom: 18, paddingHorizontal: 16, borderRadius: 30, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine, overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 },
+  livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99, backgroundColor: 'rgba(197,243,106,0.12)' },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.signal },
+  liveText: { fontFamily: fonts.textBold, color: colors.signal, fontSize: 9, letterSpacing: 1 },
+  goalFooter: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 8, marginTop: -2 },
+  goalTrack: { height: 6, borderRadius: 8, backgroundColor: colors.inkLine, overflow: 'hidden' },
+  goalFill: { height: 6, borderRadius: 8, backgroundColor: colors.signal },
+  stats: { flexDirection: 'row', gap: 9, marginTop: 14 },
+  stat: { flex: 1, paddingVertical: 15, paddingHorizontal: 12, borderRadius: 20, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
+  statAccent: { height: 4, borderRadius: 4, backgroundColor: colors.inkLine, marginTop: 13, overflow: 'hidden' },
+  weekRow: { flexDirection: 'row', gap: 7, marginTop: 22 },
+  day: { height: 88, borderRadius: 20, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  upNext: { backgroundColor: colors.bone, borderRadius: radius.card, padding: 24 },
+  upNext: { backgroundColor: colors.bone, borderRadius: 28, padding: 24 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   go: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
   wave: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 28, height: 28 },
-  quick: { width: 200, height: 150, borderRadius: radius.card, padding: 20, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
+  quick: { width: 205, height: 158, borderRadius: 25, padding: 20, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
 });

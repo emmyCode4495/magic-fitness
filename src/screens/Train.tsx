@@ -59,11 +59,21 @@ export function TrainScreen({ onStart }: { onStart: (w: Workout) => void }) {
   return (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, paddingHorizontal: 20 }}>
       <Animated.View entering={enter(0)}>
-        <Text style={[type.micro, { color: colors.boneDim }]}>Library</Text>
-        <Text style={[type.h1, { color: colors.bone, marginTop: 6 }]}>Pick your work.</Text>
+        <Text style={[type.micro, { color: colors.signal }]}>TRAINING LIBRARY</Text>
+        <Text style={[type.h1, { color: colors.bone, marginTop: 7, fontSize: 36 }]}>Find your next gear.</Text>
+        <Text style={[type.body, { color: colors.boneDim, marginTop: 8 }]}>A little stronger with every session.</Text>
       </Animated.View>
 
-      <Animated.View entering={enter(1)} style={styles.chips}>
+      <Animated.View entering={enter(1)} style={styles.libraryBanner}>
+        <View style={{ flex: 1 }}>
+          <Text style={[type.micro, { color: colors.ink, opacity: 0.65 }]}>READY WHEN YOU ARE</Text>
+          <Text style={[type.h2, { color: colors.ink, marginTop: 6 }]}>{workouts.length} guided sessions</Text>
+          <Text style={[type.small, { color: colors.paperDim, marginTop: 4 }]}>Strength · Cardio · Mobility</Text>
+        </View>
+        <View style={styles.bannerMark}><Icon name="arrow" color={colors.signal} size={24} stroke={2.3} /></View>
+      </Animated.View>
+
+      <Animated.View entering={enter(2)} style={styles.chips}>
         {FILTERS.map((f) => {
           const on = f === filter;
           return (
@@ -81,7 +91,7 @@ export function TrainScreen({ onStart }: { onStart: (w: Workout) => void }) {
         })}
       </Animated.View>
 
-      <Animated.View layout={reflow} style={{ gap: 12, marginTop: 20 }}>
+      <Animated.View layout={reflow} style={{ gap: 14, marginTop: 18 }}>
         {list.map((w) => (
           <WorkoutCard key={w.id} w={w} open={openId === w.id} onToggle={() => setOpenId(openId === w.id ? null : w.id)} onStart={() => onStart(w)} />
         ))}
@@ -91,9 +101,11 @@ export function TrainScreen({ onStart }: { onStart: (w: Workout) => void }) {
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row', gap: 8, marginTop: 24 },
+  libraryBanner: { marginTop: 22, padding: 20, borderRadius: 25, backgroundColor: colors.signal, flexDirection: 'row', alignItems: 'center' },
+  bannerMark: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  chips: { flexDirection: 'row', gap: 8, marginTop: 22 },
   chip: { minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: colors.inkLine },
-  card: { backgroundColor: colors.inkRaised, borderRadius: radius.card, padding: 22, borderWidth: 1, borderColor: colors.inkLine },
+  card: { backgroundColor: colors.inkRaised, borderRadius: 25, padding: 22, borderWidth: 1, borderColor: colors.inkLine },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   exRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.inkLine },
   start: { marginTop: 12, height: 56, borderRadius: 999, backgroundColor: colors.signal, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },

@@ -13,8 +13,8 @@ export const TABS: { key: string; label: string; icon: IconName }[] = [
   { key: 'progress', label: 'Progress', icon: 'progress' },
 ];
 
-const W = 92;
-const H = 60;
+const W = 96;
+const H = 62;
 const PAD = 6;
 
 /** Floating dock. The signal pill stretches toward its destination: the leading edge snaps, the trailing edge lags. */
@@ -49,7 +49,7 @@ export function TabBar({ index, onChange, blurTarget }: { index: number; onChang
             blurMethod={Platform.OS === 'android' ? 'dimezisBlurViewSdk31Plus' : undefined}
             style={StyleSheet.absoluteFill}
           />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(29,25,22,0.72)' }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(16,18,17,0.82)' }]} />
         </View>
         <Animated.View style={[styles.pill, pill]} />
         {TABS.map((t, i) => {
@@ -86,9 +86,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.inkRaised,
     borderWidth: 1,
     borderColor: colors.inkLine,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 24, elevation: 14,
   },
   clip: { ...StyleSheet.absoluteFill, borderRadius: 999, overflow: 'hidden' },
   pill: { position: 'absolute', top: PAD, height: H, borderRadius: 999, backgroundColor: colors.signal },
   tab: { width: W, height: H, alignItems: 'center', justifyContent: 'center', gap: 3 },
-  label: { fontFamily: fonts.textBold, fontSize: 11, letterSpacing: 0.3 },
+  label: { fontFamily: fonts.textBold, fontSize: 11, letterSpacing: 0.35 },
 });

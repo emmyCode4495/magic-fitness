@@ -71,13 +71,22 @@ export function ProgressScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, paddingHorizontal: 20 }}>
       <Animated.View entering={enter(0)} style={styles.rowBetween}>
         <View>
-          <Text style={[type.micro, { color: colors.boneDim }]}>Active minutes</Text>
-          <Text style={[type.h1, { color: colors.bone, marginTop: 6 }]}>Your rhythm.</Text>
+          <Text style={[type.micro, { color: colors.signal }]}>YOUR PERFORMANCE</Text>
+          <Text style={[type.h1, { color: colors.bone, marginTop: 7, fontSize: 36 }]}>Look how far.</Text>
+          <Text style={[type.small, { color: colors.boneDim, marginTop: 5 }]}>Every rep is progress.</Text>
         </View>
         <Segment value={range} onChange={setRange} />
       </Animated.View>
 
-      <Animated.View entering={enter(1)} style={styles.chart}>
+      <Animated.View entering={enter(1)} style={styles.summary}>
+        <View>
+          <Text style={[type.micro, { color: colors.ink, opacity: 0.62 }]}>TOTAL THIS {range.toUpperCase()}</Text>
+          <Text style={[type.display, { color: colors.ink, fontSize: 42, marginTop: 5 }]}>{data.values.reduce((a, b) => a + b, 0)} <Text style={[type.small, { color: colors.paperDim }]}>min</Text></Text>
+        </View>
+        <View style={styles.summaryBadge}><Text style={[type.h2, { color: colors.signal }]}>↗</Text></View>
+      </Animated.View>
+
+      <Animated.View entering={enter(2)} style={styles.chart}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
           <RollingNumber value={data.values[sel]} height={72} style={[type.display, { color: colors.bone, fontSize: 64 }]} />
           <Text style={[type.bodyMed, { color: colors.boneDim, marginBottom: 14 }]}>{data.unit}</Text>
@@ -90,7 +99,7 @@ export function ProgressScreen() {
         </View>
       </Animated.View>
 
-      <Animated.View entering={enter(2)} style={styles.streak}>
+      <Animated.View entering={enter(3)} style={styles.streak}>
         <View>
           <Text style={[type.micro, { color: colors.paperDim }]}>Weekly streak</Text>
           <Text style={[type.h1, { color: colors.paperInk, fontSize: 40, marginTop: 6 }]}>6 weeks</Text>
@@ -102,7 +111,7 @@ export function ProgressScreen() {
         </View>
       </Animated.View>
 
-      <Animated.View entering={enter(3)} style={{ marginTop: 32 }}>
+      <Animated.View entering={enter(4)} style={{ marginTop: 32 }}>
         <Text style={[type.micro, { color: colors.boneDim, marginBottom: 4 }]}>Personal records</Text>
         {records.map((r) => (
           <View key={r.name} style={styles.record}>
@@ -120,8 +129,10 @@ const styles = StyleSheet.create({
   segment: { flexDirection: 'row', padding: 4, borderRadius: 999, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
   thumb: { position: 'absolute', top: 4, left: 4, width: 96, height: 40, borderRadius: 999, backgroundColor: colors.bone },
   segItem: { width: 96, height: 40, alignItems: 'center', justifyContent: 'center' },
-  chart: { marginTop: 28, padding: 22, borderRadius: radius.card, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
+  summary: { marginTop: 22, padding: 20, borderRadius: 25, backgroundColor: colors.signal, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryBadge: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  chart: { marginTop: 14, padding: 22, borderRadius: 25, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
   barCol: { flex: 1, alignItems: 'center' },
-  streak: { marginTop: 12, padding: 22, borderRadius: radius.card, backgroundColor: colors.bone, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  streak: { marginTop: 14, padding: 22, borderRadius: 25, backgroundColor: colors.bone, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   record: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.inkLine },
 });
