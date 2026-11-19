@@ -1,171 +1,183 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { Extrapolation, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, useAnimatedProps, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PressableScale } from '../components/PressableScale';
-import { PulseDial } from '../components/PulseDial';
 import { Icon } from '../components/Icon';
-import { TODAY_INDEX, Workout, week, workouts } from '../data';
-import { colors, enter, fonts, motion, radius, shadow, type } from '../theme';
+import { PressableScale } from '../components/PressableScale';
+import { RollingNumber } from '../components/RollingNumber';
+import { TAB_BAR_H } from '../components/TabBar';
+import { TODAY_INDEX, byId, dailyTasks, photos, week, workouts } from '../data';
+import { colors, enter, fonts, limeGlow, motion, type } from '../theme';
 
-const WAVE = [6, 10, 16, 8, 22, 14, 9, 26, 12, 18, 7, 13, 20, 10, 6, 15, 24, 11, 8, 17];
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const KCAL = 1670;
+const KCAL_GOAL = 2700;
 
-function Day({ d, n, done, isToday, selected, onPress }: { d: string; n: number; done: boolean; isToday: boolean; selected: boolean; onPress: () => void }) {
-  // Reanimated 4 CSS transitions: colours ease on their own when `selected` flips.
-  const fade = { transitionProperty: 'color', transitionDuration: motion.duration.fast } as const;
-  const txt = { color: selected ? colors.paperInk : colors.boneDim, ...fade };
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning!' : h < 18 ? 'Good afternoon!' : 'Good evening!';
+}
+
+/** Dark ring on lime: fills to today's calorie progress, number rolls up inside. */
+function PlanRing({ value, goal, size = 124 }: { value: number; goal: number; size?: number }) {
+  const stroke = 12;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const p = useSharedValue(0);
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    p.value = withDelay(350, withTiming(value / goal, { duration: 1300, easing: motion.easing.emphasized }));
+    const t = setTimeout(() => setShown(value), 400);
+    return () => clearTimeout(t);
+  }, [value, goal, p]);
+  const props = useAnimatedProps(() => ({ strokeDashoffset: c * (1 - p.value) }));
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }} accessible accessibilityLabel={`${value} kilocalories`}>
+      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(16,18,10,0.18)" strokeWidth={stroke} fill="none" />
+        <AnimatedCircle cx={size / 2} cy={size / 2} r={r} stroke={colors.ink} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={c} animatedProps={props} rotation="-90" origin={`${size / 2}, ${size / 2}`} />
+      </Svg>
+      <RollingNumber value={shown} grouping height={30} style={{ fontFamily: fonts.heavy, fontSize: 26, color: colors.ink }} />
+      <Text style={{ fontFamily: fonts.semi, fontSize: 15, color: colors.inkDim }}>kcal</Text>
+    </View>
+  );
+}
+
+function Day({ d, n, done, today, selected, onPress }: { d: string; n: number; done: boolean; today: boolean; selected: boolean; onPress: () => void }) {
+  const txt = { color: selected ? colors.ink : colors.text, transitionProperty: 'color', transitionDuration: motion.duration.fast } as const;
   return (
     <PressableScale wrapStyle={{ flex: 1 }} haptic onPress={onPress} accessibilityLabel={`${d} ${n}${done ? ', completed' : ''}`}>
       <Animated.View
-        style={[
-          styles.day,
-          { backgroundColor: selected ? colors.bone : colors.inkRaised, transitionProperty: 'backgroundColor', transitionDuration: motion.duration.fast },
-        ]}
+        style={[styles.day, selected && limeGlow, { backgroundColor: selected ? colors.lime : colors.surface, borderColor: selected ? colors.lime : colors.line, transitionProperty: ['backgroundColor', 'borderColor'], transitionDuration: motion.duration.fast }]}
       >
-        <Animated.Text style={[type.micro, txt]}>{d}</Animated.Text>
-        <Animated.Text style={[{ fontFamily: fonts.display, fontSize: 20 }, txt]}>{n}</Animated.Text>
-        <View style={[styles.dot, done ? { backgroundColor: colors.signal } : isToday ? { borderWidth: 1.5, borderColor: colors.signal } : { backgroundColor: colors.inkLine }]} />
+        <Animated.Text style={[type.micro, txt, { opacity: 0.8 }]}>{d}</Animated.Text>
+        <Animated.Text style={[{ fontFamily: fonts.bold, fontSize: 18 }, txt]}>{n}</Animated.Text>
+        {done ? (
+          <Icon name="check" color={selected ? colors.ink : colors.lime} size={14} stroke={3} />
+        ) : (
+          <View style={[styles.dot, today ? { borderWidth: 1.5, borderColor: selected ? colors.ink : colors.lime } : { backgroundColor: selected ? 'rgba(16,18,10,0.3)' : colors.line }]} />
+        )}
       </Animated.View>
     </PressableScale>
   );
 }
 
-export function HomeScreen({ onStart }: { onStart: (w: Workout) => void }) {
+function Meta({ icon, text }: { icon: 'clock' | 'flame'; text: string }) {
+  return (
+    <View style={styles.meta}>
+      <Icon name={icon} color={icon === 'clock' ? colors.lime : colors.flame} size={15} />
+      <Text style={[type.small, { color: colors.textDim }]}>{text}</Text>
+    </View>
+  );
+}
+
+export function HomeScreen({ onOpen, onStart, onSeeAll }: { onOpen: (id: string) => void; onStart: (workoutId: string) => void; onSeeAll: () => void }) {
   const insets = useSafeAreaInsets();
-  const [kcal, setKcal] = useState(0);
   const [selected, setSelected] = useState(TODAY_INDEX);
-  useEffect(() => {
-    const t = setTimeout(() => setKcal(482), 500);
-    return () => clearTimeout(t);
-  }, []);
-  const scrollY = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler((e) => {
-    scrollY.value = e.contentOffset.y;
-  });
-  // The dial recedes as you scroll: slower than the content, smaller, dimmer.
-  const dialParallax = useAnimatedStyle(() => ({
-    opacity: interpolate(scrollY.value, [0, 320], [1, 0.2], Extrapolation.CLAMP),
-    transform: [
-      { translateY: scrollY.value * 0.35 },
-      { scale: interpolate(scrollY.value, [0, 320], [1, 0.84], Extrapolation.CLAMP) },
-    ],
-  }));
-  const next = workouts[0];
-  const rest = workouts.slice(1);
-  const stats = [
-    { label: 'Steps', value: '7,204' },
-    { label: 'Active', value: '46 min' },
-    { label: 'Streak', value: '6 wks' },
-  ];
+  const [tasks, setTasks] = useState(dailyTasks);
+  const doneCount = tasks.filter((t) => t.done).length;
+  const goals = ['body', 'lower', 'plank', 'challenge'].map(byId);
 
   return (
-    <Animated.ScrollView
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom + 120, paddingHorizontal: 20 }}
-    >
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + TAB_BAR_H + 32 }}>
       <Animated.View entering={enter(0)} style={styles.header}>
-        <View>
-          <Text style={[type.micro, { color: colors.boneDim }]}>Saturday · 14 Nov</Text>
-          <Text style={[type.h1, { color: colors.bone, marginTop: 6 }]}>Morning, Amara.</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[type.small, { color: colors.textDim }]}>Hello {greeting()}</Text>
+          <Text style={[type.title, { color: colors.text, marginTop: 2 }]}>Antoni Rodrigues</Text>
         </View>
-        <View style={styles.avatar}>
-          <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.signal }}>A</Text>
-        </View>
+        <Image source={photos.avatar} style={styles.avatar} accessibilityLabel="Your profile photo" />
       </Animated.View>
 
-      <Animated.View entering={enter(1)} style={styles.heroPanel}>
-        <View style={styles.heroTop}>
-          <View>
-            <Text style={[type.micro, { color: colors.boneDim }]}>TODAY'S ENERGY</Text>
-            <Text style={[type.small, { color: colors.bone, marginTop: 5 }]}>You're building momentum.</Text>
-          </View>
-          <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>ON TRACK</Text></View>
-        </View>
-        <Animated.View style={dialParallax}>
-          <PulseDial value={kcal} goal={650} size={270} />
-        </Animated.View>
-        <View style={styles.goalFooter}>
+      <Animated.View entering={enter(1)} style={styles.pad}>
+        <View style={styles.plan}>
           <View style={{ flex: 1 }}>
-            <View style={styles.goalTrack}><View style={[styles.goalFill, { width: `${Math.min((kcal / 650) * 100, 100)}%` }]} /></View>
-            <Text style={[type.small, { color: colors.boneDim, marginTop: 8 }]}>168 kcal to your daily goal</Text>
+            <Text style={styles.planTitle}>My Plan For Today</Text>
+            <Text style={[type.body, { color: colors.inkDim, marginTop: 14, fontFamily: fonts.semi }]}>{doneCount}/{tasks.length} Complete</Text>
           </View>
-          <Text style={[type.h2, { color: colors.signal }]}>74%</Text>
+          <PlanRing value={KCAL} goal={KCAL_GOAL} />
         </View>
       </Animated.View>
 
-      <Animated.View entering={enter(2)} style={styles.stats}>
-        {stats.map((s, i) => (
-          <View key={s.label} style={styles.stat}>
-            <Text style={[type.micro, { color: colors.boneDim }]}>{s.label}</Text>
-            <Text style={[type.h2, { color: colors.bone, marginTop: 7 }]}>{s.value}</Text>
-            <View style={styles.statAccent}><View style={{ width: i === 0 ? '78%' : i === 1 ? '62%' : '86%', height: 4, borderRadius: 4, backgroundColor: colors.signal }} /></View>
-          </View>
-        ))}
+      <Animated.View entering={enter(2)} style={[styles.pad, { marginTop: 18 }]}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {week.map((w, i) => (
+            <Day key={i} d={w.d} n={w.n} done={w.done} today={i === TODAY_INDEX} selected={selected === i} onPress={() => setSelected(i)} />
+          ))}
+        </View>
       </Animated.View>
 
-      <Animated.View entering={enter(3)} style={styles.weekRow}>
-        {week.map((w, i) => (
-          <Day key={i} {...w} isToday={i === TODAY_INDEX} selected={selected === i} onPress={() => setSelected(i)} />
-        ))}
-      </Animated.View>
-
-      <Animated.View entering={enter(4)}>
-        <Text style={[type.micro, { color: colors.boneDim, marginTop: 32, marginBottom: 12 }]}>Up next</Text>
-        <PressableScale scaleTo={0.98} onPress={() => onStart(next)} style={[styles.upNext, shadow.lifted]} accessibilityLabel={`Start ${next.title}`}>
-          <View style={styles.rowBetween}>
-            <Text style={[type.micro, { color: colors.paperDim }]}>{next.kind} · {next.level}</Text>
-            <View style={styles.go}>
-              <Icon name="arrow" color={colors.signal} size={22} stroke={2} />
-            </View>
-          </View>
-          <Text style={[type.h1, { color: colors.paperInk, fontSize: 36, lineHeight: 38, marginTop: 28 }]}>{next.title}</Text>
-          <Text style={[type.bodyMed, { color: colors.paperDim, marginTop: 8 }]}>{next.minutes} min · {next.kcal} kcal</Text>
-          <View style={styles.wave}>
-            {WAVE.map((h, i) => (
-              <View key={i} style={{ width: 3, height: h, borderRadius: 2, backgroundColor: i < 12 ? colors.paperInk : colors.paperLine }} />
-            ))}
-          </View>
-        </PressableScale>
-      </Animated.View>
-
-      <Animated.View entering={enter(5)}>
-        <Text style={[type.micro, { color: colors.boneDim, marginTop: 32, marginBottom: 12 }]}>Quick sessions</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
-          {rest.map((w) => (
-            <PressableScale key={w.id} haptic onPress={() => onStart(w)} style={styles.quick} accessibilityLabel={`Start ${w.title}`}>
-              <Text style={[type.micro, { color: colors.signal }]}>{w.kind}</Text>
-              <Text style={[type.h2, { color: colors.bone, marginTop: 10 }]}>{w.title}</Text>
-              <Text style={[type.small, { color: colors.boneDim, marginTop: 'auto' }]}>{w.minutes} min</Text>
+      <Animated.View entering={enter(3)}>
+        <View style={[styles.sectionHead, styles.pad]}>
+          <Text style={[type.h2, { color: colors.text }]}>Start New Goal</Text>
+          <PressableScale onPress={onSeeAll} accessibilityRole="button" accessibilityLabel="See all workouts" hitSlop={10}>
+            <Text style={[type.small, { color: colors.lime, fontFamily: fonts.semi }]}>See all</Text>
+          </PressableScale>
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
+          {goals.map((w) => (
+            <PressableScale key={w.id} haptic onPress={() => onOpen(w.id)} style={styles.goal} accessibilityRole="button" accessibilityLabel={`${w.title}, ${w.minutes} minutes`}>
+              <Image source={w.image} resizeMode="cover" style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.88)']} locations={[0.25, 1]} style={StyleSheet.absoluteFill} />
+              <View style={styles.badge}><Text style={[type.micro, { color: colors.text }]}>{`${w.minutes}:00`}</Text></View>
+              <View style={{ position: 'absolute', left: 14, right: 14, bottom: 12 }}>
+                <Text style={[type.h3, { color: colors.text }]} numberOfLines={1}>{w.title}</Text>
+                <Text style={[type.small, { color: colors.textDim, marginTop: 1 }]}>{w.subtitle}</Text>
+                <View style={{ flexDirection: 'row', gap: 14, marginTop: 6 }}>
+                  <Meta icon="clock" text={`${w.minutes} Min`} />
+                  <Meta icon="flame" text={`${w.kcal} Kcal`} />
+                </View>
+              </View>
             </PressableScale>
           ))}
         </ScrollView>
       </Animated.View>
-    </Animated.ScrollView>
+
+      <Animated.View entering={enter(4)} style={styles.pad}>
+        <View style={[styles.sectionHead, { paddingHorizontal: 0 }]}>
+          <Text style={[type.h2, { color: colors.text }]}>Daily Task</Text>
+          <Text style={[type.small, { color: colors.textDim }]}>{doneCount} of {tasks.length} done</Text>
+        </View>
+        <View style={{ gap: 12 }}>
+          {tasks.map((t) => (
+            <Animated.View key={t.id} style={[styles.task, t.done && { opacity: 0.6 }]}>
+              <Image source={t.image} style={styles.thumb} />
+              <View style={{ flex: 1 }}>
+                <Text style={[type.h3, { color: colors.text }, t.done && { textDecorationLine: 'line-through' }]} numberOfLines={1}>{t.title}</Text>
+                <View style={{ flexDirection: 'row', gap: 14, marginTop: 4 }}>
+                  <Meta icon="clock" text={`${t.minutes} min`} />
+                  <Meta icon="flame" text={`${t.kcal} cal`} />
+                </View>
+              </View>
+              {t.done ? (
+                <View style={styles.doneMark} accessible accessibilityLabel="Completed"><Icon name="check" color={colors.ink} size={18} stroke={3} /></View>
+              ) : (
+                <PressableScale haptic scaleTo={0.88} hitSlop={8} onPress={() => onStart(t.workoutId)} accessibilityRole="button" accessibilityLabel={`Start ${t.title}`}>
+                  <Icon name="play" color={colors.lime} size={34} stroke={1.5} fill={colors.lime} />
+                </PressableScale>
+              )}
+            </Animated.View>
+          ))}
+        </View>
+      </Animated.View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  avatar: { width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderColor: colors.inkLine, backgroundColor: colors.inkRaised, alignItems: 'center', justifyContent: 'center' },
-  heroPanel: { marginTop: 24, paddingTop: 20, paddingBottom: 18, paddingHorizontal: 16, borderRadius: 30, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine, overflow: 'hidden' },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 },
-  livePill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99, backgroundColor: 'rgba(197,243,106,0.12)' },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.signal },
-  liveText: { fontFamily: fonts.textBold, color: colors.signal, fontSize: 9, letterSpacing: 1 },
-  goalFooter: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 8, marginTop: -2 },
-  goalTrack: { height: 6, borderRadius: 8, backgroundColor: colors.inkLine, overflow: 'hidden' },
-  goalFill: { height: 6, borderRadius: 8, backgroundColor: colors.signal },
-  stats: { flexDirection: 'row', gap: 9, marginTop: 14 },
-  stat: { flex: 1, paddingVertical: 15, paddingHorizontal: 12, borderRadius: 20, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
-  statAccent: { height: 4, borderRadius: 4, backgroundColor: colors.inkLine, marginTop: 13, overflow: 'hidden' },
-  weekRow: { flexDirection: 'row', gap: 7, marginTop: 22 },
-  day: { height: 88, borderRadius: 20, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  upNext: { backgroundColor: colors.bone, borderRadius: 28, padding: 24 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  go: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
-  wave: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: 28, height: 28 },
-  quick: { width: 205, height: 158, borderRadius: 25, padding: 20, backgroundColor: colors.inkRaised, borderWidth: 1, borderColor: colors.inkLine },
+  pad: { paddingHorizontal: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 12 },
+  avatar: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: colors.lime },
+  plan: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.lime, borderRadius: 28, padding: 22, marginTop: 22 },
+  planTitle: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.5, color: colors.ink },
+  day: { height: 86, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11 },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 28, marginBottom: 14 },
+  goal: { width: 262, height: 206, borderRadius: 22, overflow: 'hidden', backgroundColor: colors.surface },
+  badge: { position: 'absolute', top: 12, left: 12, paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.6)' },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  task: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 12, borderRadius: 20, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.line },
+  thumb: { width: 60, height: 60, borderRadius: 14, backgroundColor: colors.surfaceUp },
+  doneMark: { width: 34, height: 34, borderRadius: 17, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },
 });

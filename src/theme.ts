@@ -1,37 +1,41 @@
 import { StyleSheet } from 'react-native';
 import { Easing, FadeInDown } from 'react-native-reanimated';
 
+/** Black canvas, one lime accent. Surfaces step up in lightness; lime is kept for what matters. */
 export const colors = {
-  ink: '#101211',
-  inkRaised: '#191D1A',
-  inkLine: '#2A312C',
-  bone: '#F2F4EC',
-  boneDim: '#A3ADA4',
-  signal: '#C5F36A',
-  paperInk: '#101611',
-  paperDim: '#59665A',
-  paperLine: '#DCE5D8',
+  bg: '#0B0B0B',
+  surface: '#151515',
+  surfaceUp: '#1E1E1E',
+  line: '#2B2B2B',
+  track: 'rgba(255,255,255,0.14)',
+  lime: '#D5F24B',
+  flame: '#FF9F43',
+  limeSoft: 'rgba(213,242,75,0.14)',
+  ink: '#10120A', // text on lime
+  inkDim: 'rgba(16,18,10,0.66)',
+  text: '#FFFFFF',
+  textDim: '#A3A3A3',
+  textFaint: '#6F6F6F',
 };
 
 export const fonts = {
-  displayHeavy: 'BricolageGrotesque_800ExtraBold',
-  display: 'BricolageGrotesque_700Bold',
-  text: 'DMSans_400Regular',
-  textMed: 'DMSans_500Medium',
-  textBold: 'DMSans_700Bold',
+  regular: 'Urbanist_500Medium',
+  semi: 'Urbanist_600SemiBold',
+  bold: 'Urbanist_700Bold',
+  heavy: 'Urbanist_800ExtraBold',
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
-export const radius = { card: 28, chip: 16, pill: 999 };
+export const radius = { card: 24, tile: 18, chip: 14, pill: 999 };
 
 export const type = StyleSheet.create({
-  display: { fontFamily: fonts.displayHeavy, fontSize: 64, letterSpacing: -2.6 },
-  h1: { fontFamily: fonts.displayHeavy, fontSize: 32, lineHeight: 34, letterSpacing: -1.1 },
-  h2: { fontFamily: fonts.display, fontSize: 22, lineHeight: 26, letterSpacing: -0.5 },
-  body: { fontFamily: fonts.text, fontSize: 15, lineHeight: 21 },
-  bodyMed: { fontFamily: fonts.textMed, fontSize: 15, lineHeight: 21 },
-  small: { fontFamily: fonts.textMed, fontSize: 13, lineHeight: 18 },
-  micro: { fontFamily: fonts.textBold, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase' },
+  display: { fontFamily: fonts.heavy, fontSize: 56, letterSpacing: -1.5 },
+  title: { fontFamily: fonts.bold, fontSize: 28, lineHeight: 34, letterSpacing: -0.4 },
+  h2: { fontFamily: fonts.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.2 },
+  h3: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 22 },
+  body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22 },
+  small: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
+  micro: { fontFamily: fonts.semi, fontSize: 12, lineHeight: 16 },
 });
 
 export const motion = {
@@ -51,17 +55,23 @@ export const motion = {
 
 /** Staggered spring entrance used by every screen. */
 export const enter = (i = 0) =>
-  FadeInDown.delay(60 + i * motion.stagger)
+  FadeInDown.delay(40 + i * motion.stagger)
     .springify()
     .damping(18)
     .stiffness(170);
 
 export const shadow = {
-  lifted: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.35,
-    shadowRadius: 26,
-    elevation: 10,
-  },
+  lifted: { shadowColor: '#000', shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.45, shadowRadius: 24, elevation: 10 },
+};
+
+export const limeGlow = {
+  shadowColor: colors.lime,
+  shadowOffset: { width: 0, height: 8 },
+  shadowOpacity: 0.4,
+  shadowRadius: 18,
+};
+
+export const alpha = (h: string, a: number) => {
+  const n = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return `rgba(${n[0]},${n[1]},${n[2]},${a})`;
 };
